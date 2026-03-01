@@ -1,0 +1,29 @@
+{
+  "name": "logistics-backend",
+  "version": "1.0.0",
+  "description": "Logistics Shipment Booking & Tracking System - Backend API",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
+  "keywords": ["logistics", "shipment", "tracking"],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "joi": "^17.13.3",
+    "morgan": "^1.10.0",
+    "mysql2": "^3.12.0",
+    "sequelize": "^6.37.5",
+    "swagger-ui-express": "^5.0.1",
+    "uuid": "^11.1.0",
+    "yamljs": "^0.3.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}

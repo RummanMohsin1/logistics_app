@@ -1,0 +1,419 @@
+openapi: 3.0.3
+info:
+  title: Logistics Shipment Booking & Tracking API
+  description: REST API for managing carrier services, shipment bookings, and delivery tracking
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:5000/api
+    description: Development server
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      tags: [System]
+      responses:
+        200:
+          description: Server is healthy
+
+  /carriers:
+    get:
+      summary: List all carrier groups
+      tags: [Carriers]
+      responses:
+        200:
+          description: List of carrier groups
+
+  /carriers/{id}:
+    get:
+      summary: Get carrier group by ID
+      tags: [Carriers]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Carrier group details
+        404:
+          description: Carrier group not found
+
+  /carriers/{id}/services:
+    get:
+      summary: List services for a carrier group
+      tags: [Carriers]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: List of carrier services
+
+  /services:
+    get:
+      summary: Search carrier services
+      tags: [Carriers]
+      parameters:
+        - name: origin
+          in: query
+          schema:
+            type: string
+        - name: destination
+          in: query
+          schema:
+            type: string
+        - name: carrier_group_id
+          in: query
+          schema:
+            type: integer
+        - name: transport_mode
+          in: query
+          schema:
+            type: string
+            enum: [AIR, SEA, ROAD]
+        - name: sort_by
+          in: query
+          schema:
+            type: string
+            enum: [price, transit_time_days, carrier_name]
+        - name: sort_order
+          in: query
+          schema:
+            type: string
+            enum: [ASC, DESC]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        200:
+          description: Paginated list of carrier services
+
+  /shipments:
+    post:
+      summary: Create a draft shipment
+      tags: [Shipments]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateShipment'
+      responses:
+        201:
+          description: Draft shipment created
+        400:
+          description: Validation error
+
+    get:
+      summary: List shipments
+      tags: [Shipments]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [DRAFT, BOOKED, IN_TRANSIT, DELIVERED, CLOSED, EXCEPTION]
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Paginated list of shipments
+
+  /shipments/{id}:
+    get:
+      summary: Get shipment details
+      tags: [Shipments]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Shipment details with legs and timeline
+        404:
+          description: Shipment not found
+
+    put:
+      summary: Update a draft shipment
+      tags: [Shipments]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateShipment'
+      responses:
+        200:
+          description: Updated shipment
+        409:
+          description: Conflict (optimistic lock or carrier mismatch)
+        422:
+          description: Not in DRAFT status
+
+  /shipments/{id}/legs:
+    post:
+      summary: Add a leg to a draft shipment
+      tags: [Shipment Legs]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddLeg'
+      responses:
+        200:
+          description: Shipment with new leg
+        409:
+          description: Carrier mismatch
+        422:
+          description: Capacity exceeded or not in DRAFT
+
+  /shipments/{id}/legs/{legId}:
+    put:
+      summary: Update a leg
+      tags: [Shipment Legs]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: legId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Updated shipment
+
+    delete:
+      summary: Remove a leg
+      tags: [Shipment Legs]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: legId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Updated shipment
+
+  /shipments/{id}/submit:
+    post:
+      summary: Submit a shipment (idempotent)
+      tags: [Shipments]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: Idempotency-Key
+          in: header
+          schema:
+            type: string
+      responses:
+        200:
+          description: Shipment submitted, number generated
+        422:
+          description: Validation failed
+
+  /shipments/{id}/status:
+    patch:
+      summary: Transition shipment status
+      tags: [Shipments]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransitionStatus'
+      responses:
+        200:
+          description: Status transitioned
+        422:
+          description: Invalid transition
+
+  /shipments/{id}/exception:
+    post:
+      summary: Record an exception
+      tags: [Shipments]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordException'
+      responses:
+        200:
+          description: Exception recorded
+
+  /shipments/{id}/resolve-exception:
+    post:
+      summary: Resolve an exception
+      tags: [Shipments]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Exception resolved
+
+components:
+  schemas:
+    CreateShipment:
+      type: object
+      required:
+        - shipper_name
+        - pickup_address
+        - delivery_address
+        - cargo_type
+        - total_weight_kg
+        - total_volume_cbm
+      properties:
+        shipper_name:
+          type: string
+        shipper_email:
+          type: string
+        shipper_phone:
+          type: string
+        pickup_address:
+          type: string
+        delivery_address:
+          type: string
+        cargo_type:
+          type: string
+        total_weight_kg:
+          type: number
+        total_volume_cbm:
+          type: number
+        required_delivery_date:
+          type: string
+          format: date
+        carrier_group_id:
+          type: integer
+
+    UpdateShipment:
+      type: object
+      required:
+        - version
+      properties:
+        shipper_name:
+          type: string
+        pickup_address:
+          type: string
+        delivery_address:
+          type: string
+        cargo_type:
+          type: string
+        total_weight_kg:
+          type: number
+        total_volume_cbm:
+          type: number
+        version:
+          type: integer
+
+    AddLeg:
+      type: object
+      required:
+        - carrier_service_id
+        - leg_order
+      properties:
+        carrier_service_id:
+          type: integer
+        leg_order:
+          type: integer
+        estimated_arrival:
+          type: string
+          format: date
+
+    TransitionStatus:
+      type: object
+      required:
+        - status
+        - version
+      properties:
+        status:
+          type: string
+          enum: [IN_TRANSIT, DELIVERED, CLOSED]
+        notes:
+          type: string
+        changed_by:
+          type: string
+        version:
+          type: integer
+
+    RecordException:
+      type: object
+      required:
+        - reason_code
+        - version
+      properties:
+        reason_code:
+          type: string
+        notes:
+          type: string
+        changed_by:
+          type: string
+        version:
+          type: integer

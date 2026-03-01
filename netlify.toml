@@ -1,0 +1,18 @@
+[build]
+  # Point Netlify to the frontend folder
+  base = "frontend"
+  command = "npm install && npm run build"
+  publish = "dist"
+
+# React Router configuration - redirect all routes to index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Optional proxy for backend (Replace URL once backend is hosted)
+# [[redirects]]
+#   from = "/api/*"
+#   to = "https://your-backend-url.com/api/:splat"
+#   status = 200
+#   force = true
