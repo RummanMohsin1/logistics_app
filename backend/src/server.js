@@ -9,11 +9,9 @@ async function start() {
     try {
         // Test DB connection
         await sequelize.authenticate();
-        console.log('✅ Database connection established successfully.');
 
         // Sync models (creates tables if they don't exist)
         await sequelize.sync({ alter: process.env.NODE_ENV === 'development' });
-        console.log('✅ Database models synchronized.');
 
         // Seed data
         await seedDatabase();

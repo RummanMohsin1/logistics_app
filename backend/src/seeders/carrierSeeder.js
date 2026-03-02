@@ -5,8 +5,7 @@ const { CarrierGroup, CarrierService } = require('../models');
  * Represents realistic logistics carriers with multi-leg route options.
  */
 async function seedDatabase() {
-    console.log('🌱 Seeding database...');
-
+    // Seeding database...
     // ── Carrier Groups ──
     const [maerskGroup] = await CarrierGroup.findOrCreate({
         where: { code: 'MAERSK' },
@@ -80,7 +79,7 @@ async function seedDatabase() {
         });
     }
 
-    console.log('✅ Database seeded successfully!');
+    // Database seeded successfully!
 }
 
 module.exports = seedDatabase;
