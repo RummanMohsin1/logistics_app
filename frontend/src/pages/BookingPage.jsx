@@ -217,6 +217,7 @@ export default function BookingPage() {
                 )}
             </div>
 
+            {/* Step Bar */}
             <StepBar currentStep={step} />
 
             <div style={{ animation: 'fadeSlideUp 0.35s ease forwards', opacity: 0 }}>
