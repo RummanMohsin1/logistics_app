@@ -101,7 +101,6 @@ const Shipment = sequelize.define('Shipment', {
     version: true,
     indexes: [
         { fields: ['status'] },
-        { fields: ['shipment_number'] },
         { fields: ['carrier_group_id'] },
     ],
 });
